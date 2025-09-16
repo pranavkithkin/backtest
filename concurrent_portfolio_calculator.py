@@ -182,6 +182,7 @@ def main():
         stop_loss_pct = get_float_input("Stop Loss percentage (e.g., 10 for 10%)", 1, 50)
         risk_reward_ratio = get_float_input("Risk to Reward ratio (e.g., 1.5 for 1:1.5)", 0.5, 10)
         risk_per_trade_pct = get_float_input("Risk per trade percentage (e.g., 5 for 5% of available capital)", 0.5, 20)
+        move_sl_to_entry_pct = get_float_input("Move SL to entry after % gain (e.g., 3 for 3%)", 1, 20)
         
         # Optional: Initial capital
         print(f"\n💵 CAPITAL SETTINGS:")
@@ -217,6 +218,7 @@ def main():
         print(f"     • Stop Loss: {stop_loss_pct}%")
         print(f"     • Risk:Reward: 1:{risk_reward_ratio}")
         print(f"     • Risk per trade: {risk_per_trade_pct}% of available capital")
+        print(f"     • Move SL to entry after: {move_sl_to_entry_pct}% gain")
         print(f"   ⏳ This may take a few minutes...")
         
         # Calculate concurrent portfolio performance
@@ -225,7 +227,8 @@ def main():
             stop_loss_pct=stop_loss_pct,
             risk_reward_ratio=risk_reward_ratio,
             risk_per_trade_pct=risk_per_trade_pct,
-            initial_capital=initial_capital
+            initial_capital=initial_capital,
+            move_sl_to_entry_pct=move_sl_to_entry_pct
         )
         
         # Display results

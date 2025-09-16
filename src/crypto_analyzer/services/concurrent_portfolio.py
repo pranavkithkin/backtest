@@ -23,14 +23,15 @@ class ConcurrentPortfolioCalculator:
         stop_loss_pct: float,
         risk_reward_ratio: float,
         risk_per_trade_pct: float,
-        initial_capital: float = 100000
+        initial_capital: float = 100000,
+        move_sl_to_entry_pct: float = 3.0
     ) -> Dict:
         """
         Calculate portfolio performance with concurrent position management
         Uses the same efficient API calls as the original system
         """
         logger.info(f"Starting concurrent portfolio analysis with {len(signals)} signals")
-        logger.info(f"Parameters: SL={stop_loss_pct}%, RR=1:{risk_reward_ratio}, Risk={risk_per_trade_pct}%")
+        logger.info(f"Parameters: SL={stop_loss_pct}%, RR=1:{risk_reward_ratio}, Risk={risk_per_trade_pct}%, Move SL to entry at {move_sl_to_entry_pct}%")
         
         # Calculate target profit based on risk-reward ratio
         target_profit_pct = stop_loss_pct * risk_reward_ratio
@@ -42,8 +43,8 @@ class ConcurrentPortfolioCalculator:
             target_loss_pct=target_loss_pct
         )
         
-        # Initialize position manager
-        position_manager = PositionManager(initial_capital, risk_per_trade_pct)
+        # Initialize position manager with trailing stop parameter
+        position_manager = PositionManager(initial_capital, risk_per_trade_pct, move_sl_to_entry_pct)
         
         # Sort signals by timestamp
         sorted_signals = sorted(signals, key=lambda x: x.timestamp)

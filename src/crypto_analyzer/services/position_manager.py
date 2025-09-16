@@ -20,6 +20,7 @@ class OpenPosition:
     stop_loss_price: float
     take_profit_price: float
     position_id: str
+    sl_moved_to_entry: bool = False  # Track if SL has been moved to entry
     
     def __post_init__(self):
         """Generate unique position ID"""
@@ -40,10 +41,11 @@ class ClosedPosition:
 class PositionManager:
     """Manages concurrent trading positions"""
     
-    def __init__(self, initial_capital: float, risk_per_trade_pct: float):
+    def __init__(self, initial_capital: float, risk_per_trade_pct: float, move_sl_to_entry_pct: float = 3.0):
         self.initial_capital = initial_capital
         self.current_capital = initial_capital
         self.risk_per_trade_pct = risk_per_trade_pct
+        self.move_sl_to_entry_pct = move_sl_to_entry_pct  # Percentage move required to move SL to entry
         
         # Track positions
         self.open_positions: Dict[str, OpenPosition] = {}
@@ -130,6 +132,14 @@ class PositionManager:
                 
             current_price = price_data[symbol]
             
+            # Check if we should move SL to entry (trailing stop)
+            if not position.sl_moved_to_entry:
+                price_increase_pct = ((current_price - position.entry_fill_price) / position.entry_fill_price) * 100
+                if price_increase_pct >= self.move_sl_to_entry_pct:
+                    position.stop_loss_price = position.entry_fill_price
+                    position.sl_moved_to_entry = True
+                    logger.info(f"SL moved to entry for {position.signal.coin_name}: Price up {price_increase_pct:.2f}% (>= {self.move_sl_to_entry_pct}%)")
+            
             # Check for take profit
             if current_price >= position.take_profit_price:
                 pnl = position.risk_amount * 1.5  # 1:1.5 risk/reward
@@ -155,13 +165,20 @@ class PositionManager:
                 
             # Check for stop loss
             elif current_price <= position.stop_loss_price:
-                pnl = -position.risk_amount  # Full risk amount lost
+                # Calculate PnL based on whether SL was moved to entry or not
+                if position.sl_moved_to_entry and position.stop_loss_price == position.entry_fill_price:
+                    pnl = 0  # Breakeven if SL was moved to entry
+                    logger.info(f"Breakeven exit: {position.signal.coin_name} (SL at entry)")
+                else:
+                    pnl = -position.risk_amount  # Full risk amount lost
+                    logger.info(f"Stop loss hit: {position.signal.coin_name} -${abs(pnl):.2f}")
+                
                 hours_held = (current_time - position.entry_fill_time).total_seconds() / 3600
                 
                 closed_pos = ClosedPosition(
                     position=position,
                     close_time=current_time,
-                    close_reason='LOSS',
+                    close_reason='LOSS' if pnl < 0 else 'BREAKEVEN',
                     pnl=pnl,
                     hours_held=hours_held
                 )
@@ -171,10 +188,8 @@ class PositionManager:
                 
                 # Update capital
                 self.current_capital += pnl
-                self.available_capital += 0  # Lost the risk amount
+                self.available_capital += position.risk_amount + pnl
                 self.allocated_capital -= position.risk_amount
-                
-                logger.info(f"Stop loss hit: {position.signal.coin_name} -${abs(pnl):.2f}")
         
         # Remove closed positions from open positions
         for position_id in positions_to_remove:
