@@ -1,0 +1,225 @@
+# Enterprise Trading Signal Analyzer Configuration
+# ===============================================
+
+app:
+  name: "Enterprise Trading Signal Analyzer"
+  version: "2.0.0"
+  environment: "production"
+  description: "Professional-grade trading signal analysis with enterprise architecture"
+
+# Timezone Configuration
+timezones:
+  default: "Dubai"
+  supported:
+    - name: "Dubai"
+      code: "Asia/Dubai"
+      description: "UAE Standard Time (UTC+4)"
+    - name: "New_York"
+      code: "America/New_York"
+      description: "Eastern Time (UTC-5/-4)"
+    - name: "London"
+      code: "Europe/London"
+      description: "Greenwich Mean Time (UTC+0/+1)"
+    - name: "Tokyo"
+      code: "Asia/Tokyo"
+      description: "Japan Standard Time (UTC+9)"
+    - name: "Sydney"
+      code: "Australia/Sydney"
+      description: "Australian Eastern Time (UTC+10/+11)"
+
+# Analysis Configuration
+analysis:
+  risk_ranges:
+    - min: 0
+      max: 2
+      label: "Very Low Risk"
+    - min: 2
+      max: 5
+      label: "Low Risk"
+    - min: 5
+      max: 10
+      label: "Medium Risk"
+    - min: 10
+      max: 20
+      label: "High Risk"
+    - min: 20
+      max: 50
+      label: "Very High Risk"
+  
+  confidence_levels:
+    - 0.90
+    - 0.95
+    - 0.99
+  
+  minimum_signals:
+    risk_analysis: 5
+    time_analysis: 3
+    coin_analysis: 3
+    regime_analysis: 10
+
+# Asset Categories
+asset_categories:
+  BTC:
+    coins: ["BTC", "BTCUSDT", "BTCUSD"]
+    tier: "Large_Cap"
+    description: "Bitcoin - Primary cryptocurrency"
+  
+  ETH:
+    coins: ["ETH", "ETHUSDT", "ETHUSD"]
+    tier: "Large_Cap"
+    description: "Ethereum - Smart contract platform"
+  
+  Major_Alt:
+    coins: ["ADA", "SOL", "DOT", "AVAX", "MATIC", "LINK", "UNI", "ATOM"]
+    tier: "Mid_Cap"
+    description: "Major altcoins with significant market cap"
+  
+  DeFi:
+    coins: ["AAVE", "COMP", "MKR", "SNX", "YFI", "SUSHI", "1INCH"]
+    tier: "Mid_Cap"
+    description: "Decentralized Finance tokens"
+  
+  Layer2:
+    coins: ["MATIC", "LRC", "OMG", "IMX"]
+    tier: "Mid_Cap"
+    description: "Layer 2 scaling solutions"
+  
+  Alt:
+    coins: []  # Default category for unlisted coins
+    tier: "Small_Cap"
+    description: "Alternative cryptocurrencies"
+
+# Market Sessions (24-hour format)
+market_sessions:
+  Asian_Session:
+    start: 0
+    end: 8
+    description: "Asian trading session"
+  
+  European_Session:
+    start: 8
+    end: 16
+    description: "European trading session"
+  
+  US_Session:
+    start: 16
+    end: 20
+    description: "US trading session"
+  
+  US_Pacific_Overlap:
+    start: 20
+    end: 24
+    description: "US Pacific and overnight session"
+
+# Data Processing Configuration
+data:
+  validation:
+    required_columns:
+      - "coin"
+      - "entry"
+      - "sl"
+      - "tp"
+      - "timestamp_utc"
+  
+  outlier_removal:
+    enabled: true
+    risk_threshold: 100  # Maximum risk percentage
+    reward_threshold: 1000  # Maximum reward percentage
+    rr_threshold: 100  # Maximum risk-reward ratio
+
+# Machine Learning Configuration
+ml:
+  prediction_threshold: 50  # Minimum samples for ML
+  
+  features:
+    time_based:
+      - "hour"
+      - "day_of_week"
+      - "month"
+      - "time_volatility"
+    
+    categorical:
+      - "market_session"
+      - "coin_category"
+      - "signal_strength"
+  
+  models:
+    random_forest:
+      n_estimators: 100
+      test_size: 0.2
+      random_state: 42
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_rotation: true
+  max_file_size: "10MB"
+  backup_count: 5
+  
+  loggers:
+    analyzer: "INFO"
+    data_processor: "DEBUG"
+    ml_engine: "INFO"
+    exporter: "INFO"
+    config: "INFO"
+    main: "INFO"
+
+# Export Configuration
+export:
+  output_dir: "output"
+  filename_template: "{analysis_type}_{timezone}_{timestamp}"
+  
+  formats:
+    csv:
+      enabled: true
+      include_index: true
+    
+    json:
+      enabled: true
+      indent: 2
+    
+    html:
+      enabled: true
+      template: "enterprise_dashboard"
+    
+    txt:
+      enabled: true
+      encoding: "utf-8"
+
+# Reporting Configuration
+reporting:
+  default_format: "comprehensive"
+  include_charts: false
+  professional_styling: true
+  
+  sections:
+    - "executive_summary"
+    - "time_patterns"
+    - "parameter_optimization"
+    - "market_conditions"
+    - "asset_performance"
+    - "ml_insights"
+    - "statistical_validation"
+    - "recommendations"
+
+# Performance Configuration
+performance:
+  enable_monitoring: true
+  memory_threshold_mb: 1024
+  processing_timeout_seconds: 300
+  parallel_processing: false
+
+# Security Configuration
+security:
+  audit_logging: true
+  data_retention_days: 90
+  anonymize_exports: false
+
+# API Configuration (for future extensions)
+api:
+  enabled: false
+  host: "localhost"
+  port: 8000
+  rate_limiting: true
+  authentication: false

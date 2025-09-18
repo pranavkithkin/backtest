@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Trade Analysis - {{signal.coin_name}}</title>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .navbar { background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
+        .content-panel { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 20px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+        .chart-container { border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .btn-timeframe { margin: 2px; border-radius: 20px; }
+        .btn-timeframe.active { background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); border: none; }
+        .trade-info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 15px; padding: 20px; }
+        .premium-badge { background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); color: white; padding: 3px 10px; border-radius: 15px; font-size: 11px; }
+        .control-section { background: rgba(255,255,255,0.9); border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">📊 Premium TradingView Analyzer</a>
+            <span class="navbar-text">{{signal.coin_name}} <span class="premium-badge">PREMIUM</span></span>
+        </div>
+    </nav>
+    
+    <div class="container-fluid mt-3">
+        <!-- Premium Control Panel -->
+        <div class="content-panel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="control-section">
+                        <h6>⚙️ Premium Trading Parameters</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Stop Loss %</label>
+                                <input type="number" class="form-control" id="stopLoss" value="10" step="0.5" min="1" max="50">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Risk:Reward</label>
+                                <input type="number" class="form-control" id="riskReward" value="1.5" step="0.1" min="0.5" max="10">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Analysis Days</label>
+                                <input type="number" class="form-control" id="analysisDays" value="30" min="7" max="90">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-success form-control" onclick="updatePremiumChart()">🚀 Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="control-section">
+                        <h6>⏰ Premium Timeframes</h6>
+                        <div>
+                            <button class="btn btn-outline-primary btn-timeframe" onclick="changePremiumTimeframe('1')">1m</button>
+                            <button class="btn btn-outline-primary btn-timeframe" onclick="changePremiumTimeframe('5')">5m</button>
+                            <button class="btn btn-outline-primary btn-timeframe" onclick="changePremiumTimeframe('15')">15m</button>
+                            <button class="btn btn-outline-primary btn-timeframe" onclick="changePremiumTimeframe('60')">1h</button>
+                            <button class="btn btn-outline-primary btn-timeframe" onclick="changePremiumTimeframe('240')">4h</button>
+                            <button class="btn btn-outline-primary btn-timeframe" onclick="changePremiumTimeframe('1D')">1D</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Premium Trade Info -->
+        <div class="trade-info mb-3">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <strong>💰 Entry Price:</strong><br>
+                    $<span id="entryPrice">{{signal.entry_price}}</span>
+                </div>
+                <div class="col-md-2">
+                    <strong>🛑 Stop Loss:</strong><br>
+                    $<span id="stopLossPrice">-</span> (<span id="stopLossPct">-</span>%)
+                </div>
+                <div class="col-md-2">
+                    <strong>🎯 Take Profit:</strong><br>
+                    $<span id="takeProfitPrice">-</span> (<span id="takeProfitPct">-</span>%)
+                </div>
+                <div class="col-md-3">
+                    <strong>📅 Signal Time:</strong><br>
+                    {{signal.timestamp}}
+                </div>
+                <div class="col-md-3">
+                    <strong>📊 Symbol:</strong><br>
+                    {{signal.symbol}} ({{signal.coin_name}})
+                </div>
+            </div>
+        </div>
+        
+        <!-- Premium Chart Container -->
+        <div class="chart-container">
+            <div id="premium_tradingview_chart" style="height: 750px; width: 100%;"></div>
+        </div>
+        
+        <!-- Premium Controls -->
+        <div class="content-panel mt-3">
+            <div class="row">
+                <div class="col-md-8">
+                    <h6>🎛️ Premium Chart Controls</h6>
+                    <button class="btn btn-primary me-2" onclick="jumpToSignalTimePrecise()">📍 Jump to Signal Time</button>
+                    <button class="btn btn-warning me-2" onclick="addPremiumLevels()">📏 Add SL/TP Levels</button>
+                    <button class="btn btn-info me-2" onclick="addSignalMarkers()">🎯 Add Signal Markers</button>
+                    <button class="btn btn-success me-2" onclick="analyzePremiumTrade()">📊 Analyze Trade</button>
+                </div>
+                <div class="col-md-4">
+                    <div id="chartStatus">
+                        <p><strong>Chart Status:</strong> <span id="statusText">Initializing...</span></p>
+                        <p><strong>Current Time:</strong> <span id="currentTimeframe">1h</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trade Analysis Results -->
+        <div id="tradeAnalysisResults" class="content-panel" style="display: none;">
+            <h6>📈 Premium Trade Analysis Results</h6>
+            <div id="analysisContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        let premiumWidget;
+        let currentSymbol = '{{signal.symbol}}'.replace('USDT', '');
+        let currentTimeframe = '60';
+        let tradeIndex = {{trade_index}};
+        let signalTimestamp = new Date('{{signal.timestamp}}').getTime() / 1000;
+        let entryPrice = {{signal.entry_price}};
+        let tradeData = null;
+        
+        // Initialize Premium TradingView widget with advanced features
+        function initPremiumChart() {
+            const container = document.getElementById('premium_tradingview_chart');
+            container.innerHTML = '';
+            
+            premiumWidget = new TradingView.widget({
+                "width": "100%",
+                "height": 750,
+                "symbol": "BINANCE:" + currentSymbol + "USDT",
+                "interval": currentTimeframe,
+                "timezone": "Etc/UTC",
+                "theme": "light",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "container_id": "premium_tradingview_chart",
+                "studies": [
+                    "Volume@tv-basicstudies",
+                    "RSI@tv-basicstudies",
+                    "MACD@tv-basicstudies"
+                ],
+                "show_popup_button": true,
+                "popup_width": "1400",
+                "popup_height": "900",
+                "hide_side_toolbar": false,
+                "details": true,
+                "hotlist": true,
+                "calendar": true,
+                "news": ["headlines"],
+                // Premium features
+                "studies_overrides": {
+                    "volume.volume.color.0": "#FF6B6B",
+                    "volume.volume.color.1": "#4ECDC4",
+                    "RSI.plot.color": "#9C27B0",
+                    "MACD.histogram.color": "#2196F3"
+                },
+                "overrides": {
+                    "mainSeriesProperties.candleStyle.upColor": "#4ECDC4",
+                    "mainSeriesProperties.candleStyle.downColor": "#FF6B6B",
+                    "mainSeriesProperties.candleStyle.borderUpColor": "#4ECDC4",
+                    "mainSeriesProperties.candleStyle.borderDownColor": "#FF6B6B",
+                    "mainSeriesProperties.candleStyle.wickUpColor": "#4ECDC4",
+                    "mainSeriesProperties.candleStyle.wickDownColor": "#FF6B6B"
+                },
+                "disabled_features": [
+                    "use_localstorage_for_settings"
+                ],
+                "enabled_features": [
+                    "side_toolbar_in_fullscreen_mode",
+                    "header_in_fullscreen_mode",
+                    "timeframes_toolbar",
+                    "volume_force_overlay",
+                    "create_volume_indicator_by_default",
+                    "moving_average_pine_id",
+                    "hide_last_na_study_output"
+                ],
+                // Advanced Premium settings
+                "loading_screen": { "backgroundColor": "#ffffff" },
+                "custom_css_url": "",
+                "saved_data": null,
+                "auto_save_delay": 5,
+                // Time range settings for precise navigation
+                "time_frames": [
+                    { "text": "1d", "resolution": "5" },
+                    { "text": "5d", "resolution": "15" },
+                    { "text": "1m", "resolution": "60" },
+                    { "text": "3m", "resolution": "240" },
+                    { "text": "6m", "resolution": "1D" },
+                    { "text": "1y", "resolution": "1W" }
+                ]
+            });
+            
+            // Enhanced ready callback with Premium features
+            premiumWidget.onChartReady(function() {
+                console.log('Premium chart is ready');
+                document.getElementById('statusText').textContent = 'Premium Ready';
+                
+                // Load trade data and setup
+                loadTradeDataAndSetup();
+            });
+        }
+        
+        // Load trade data and setup premium features
+        function loadTradeDataAndSetup() {
+            fetch(`/api/trade_data/${tradeIndex}?stop_loss=${document.getElementById('stopLoss').value}&risk_reward=${document.getElementById('riskReward').value}`)
+                .then(response => response.json())
+                .then(data => {
+                    tradeData = data;
+                    console.log('Trade data loaded:', data);
+                    
+                    // Setup premium visualization
+                    setTimeout(() => {
+                        jumpToSignalTimePrecise();
+                        updatePremiumLevels();
+                    }, 1500);
+                })
+                .catch(error => {
+                    console.error('Error loading trade data:', error);
+                    document.getElementById('statusText').textContent = 'Error loading data';
+                });
+        }
+        
+        // Precise signal time navigation (Premium feature) - Enhanced with multiple methods
+        function jumpToSignalTimePrecise() {
+            if (!premiumWidget || !tradeData) {
+                console.log('Widget or trade data not ready');
+                document.getElementById('statusText').textContent = 'Widget not ready';
+                return;
+            }
+            
+            try {
+                console.log('=== Starting Premium Time Navigation ===');
+                console.log('Signal Unix Time:', tradeData.signal_unix);
+                console.log('Signal Date:', new Date(tradeData.signal_unix * 1000));
+                
+                // Method 1: Try advanced widget API (most compatible)
+                tryAdvancedWidgetNavigation();
+                
+                // Method 2: Try iframe approach (fallback)
+                setTimeout(() => {
+                    tryIframeNavigationPremium();
+                }, 1000);
+                
+                // Method 3: Widget recreation (last resort)
+                setTimeout(() => {
+                    if (document.getElementById('statusText').textContent.includes('Error')) {
+                        tryWidgetRecreationPremium();
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error in jumpToSignalTimePrecise:', error);
+                document.getElementById('statusText').textContent = 'Navigation error: ' + error.message;
+                showPremiumNavigationFallback();
+            }
+        }
+        
+        // Method 1: Advanced Widget API Navigation
+        function tryAdvancedWidgetNavigation() {
+            try {
+                console.log('Trying advanced widget API navigation...');
+                
+                let chart = null;
+                
+                // Try multiple chart access methods
+                if (premiumWidget.activeChart) {
+                    chart = premiumWidget.activeChart();
+                    console.log('Using activeChart() method');
+                } else if (premiumWidget.chart) {
+                    chart = premiumWidget.chart();
+                    console.log('Using chart() method');
+                }
+                
+                if (!chart) {
+                    console.log('No chart object available');
+                    throw new Error('Chart object not available');
+                }
+                
+                // Calculate precise time range
+                const analysisDays = parseInt(document.getElementById('analysisDays').value) || 30;
+                const startTime = tradeData.signal_unix - (7 * 24 * 3600); // 7 days before
+                const endTime = tradeData.signal_unix + (analysisDays * 24 * 3600); // Analysis days after
+                
+                console.log('Setting visible range:', { startTime, endTime });
+                
+                // Try setVisibleRange with promise handling
+                if (chart.setVisibleRange) {
+                    const result = chart.setVisibleRange({
+                        from: startTime,
+                        to: endTime
+                    });
+                    
+                    // Handle promise or immediate result
+                    if (result && result.then) {
+                        result.then(() => {
+                            console.log('✅ Premium API navigation successful');
+                            document.getElementById('statusText').textContent = 
+                                `✅ Navigated to signal: ${new Date(tradeData.signal_unix * 1000).toLocaleString()}`;
+                            setTimeout(() => addPremiumLevels(), 1000);
+                        }).catch((error) => {
+                            console.log('Premium API navigation promise failed:', error);
+                            document.getElementById('statusText').textContent = 'API navigation failed, trying fallback...';
+                        });
+                    } else {
+                        console.log('✅ Premium API navigation completed (non-promise)');
+                        document.getElementById('statusText').textContent = 
+                            `✅ Navigated to signal: ${new Date(tradeData.signal_unix * 1000).toLocaleString()}`;
+                        setTimeout(() => addPremiumLevels(), 1000);
+                    }
+                } else {
+                    throw new Error('setVisibleRange method not available');
+                }
+                
+            } catch (error) {
+                console.log('Advanced widget navigation failed:', error);
+                document.getElementById('statusText').textContent = 'Widget API failed, trying iframe method...';
+            }
+        }
+        
+        // Method 2: iframe Navigation for Premium
+        function tryIframeNavigationPremium() {
+            try {
+                console.log('Trying premium iframe navigation...');
+                
+                const iframe = document.querySelector('#premium_tradingview_chart iframe');
+                if (!iframe) {
+                    console.log('No iframe found for premium chart');
+                    return;
+                }
+                
+                const analysisDays = parseInt(document.getElementById('analysisDays').value) || 30;
+                const startTime = tradeData.signal_unix - (7 * 24 * 3600);
+                const endTime = tradeData.signal_unix + (analysisDays * 24 * 3600);
+                
+                // Send navigation message to iframe
+                const message = {
+                    type: 'set_visible_range',
+                    from: startTime,
+                    to: endTime,
+                    symbol: currentSymbol + 'USDT'
+                };
+                
+                iframe.contentWindow.postMessage(message, '*');
+                console.log('Premium iframe navigation message sent');
+                
+                setTimeout(() => {
+                    if (document.getElementById('statusText').textContent.includes('failed')) {
+                        document.getElementById('statusText').textContent = 
+                            `📍 Premium iframe navigation attempted (${new Date(tradeData.signal_unix * 1000).toLocaleString()})`;
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.log('Premium iframe navigation failed:', error);
+            }
+        }
+        
+        // Method 3: Widget Recreation for Premium
+        function tryWidgetRecreationPremium() {
+            try {
+                console.log('Trying premium widget recreation...');
+                
+                // Show loading state
+                document.getElementById('statusText').textContent = 'Recreating premium chart with time navigation...';
+                
+                // Calculate center time
+                const centerTime = tradeData.signal_unix;
+                
+                // Clear and recreate widget
+                const container = document.getElementById('premium_tradingview_chart');
+                container.innerHTML = '';
+                
+                premiumWidget = new TradingView.widget({
+                    "width": "100%",
+                    "height": 750,
+                    "symbol": "BINANCE:" + currentSymbol + "USDT",
+                    "interval": currentTimeframe,
+                    "timezone": "Etc/UTC",
+                    "theme": "light",
+                    "style": "1",
+                    "locale": "en",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "allow_symbol_change": true,
+                    "container_id": "premium_tradingview_chart",
+                    // Add time parameter for navigation
+                    "time": centerTime,
+                    "studies": [
+                        "Volume@tv-basicstudies",
+                        "RSI@tv-basicstudies",
+                        "MACD@tv-basicstudies"
+                    ],
+                    "show_popup_button": true,
+                    "popup_width": "1400",
+                    "popup_height": "900",
+                    "hide_side_toolbar": false,
+                    "details": true,
+                    "hotlist": true,
+                    "calendar": true,
+                    "news": ["headlines"],
+                    "studies_overrides": {
+                        "volume.volume.color.0": "#FF6B6B",
+                        "volume.volume.color.1": "#4ECDC4",
+                        "RSI.plot.color": "#9C27B0",
+                        "MACD.histogram.color": "#2196F3"
+                    },
+                    "overrides": {
+                        "mainSeriesProperties.candleStyle.upColor": "#4ECDC4",
+                        "mainSeriesProperties.candleStyle.downColor": "#FF6B6B",
+                        "mainSeriesProperties.candleStyle.borderUpColor": "#4ECDC4",
+                        "mainSeriesProperties.candleStyle.borderDownColor": "#FF6B6B",
+                        "mainSeriesProperties.candleStyle.wickUpColor": "#4ECDC4",
+                        "mainSeriesProperties.candleStyle.wickDownColor": "#FF6B6B"
+                    },
+                    "disabled_features": [
+                        "use_localstorage_for_settings"
+                    ],
+                    "enabled_features": [
+                        "side_toolbar_in_fullscreen_mode",
+                        "header_in_fullscreen_mode",
+                        "timeframes_toolbar",
+                        "volume_force_overlay",
+                        "create_volume_indicator_by_default"
+                    ],
+                    "loading_screen": { "backgroundColor": "#ffffff" },
+                    "auto_save_delay": 5
+                });
+                
+                premiumWidget.onChartReady(function() {
+                    console.log('✅ Premium widget recreation successful');
+                    document.getElementById('statusText').textContent = 
+                        `✅ Premium chart recreated at signal time: ${new Date(tradeData.signal_unix * 1000).toLocaleString()}`;
+                    
+                    // Add levels and markers
+                    setTimeout(() => {
+                        addPremiumLevels();
+                        addSignalMarkers();
+                    }, 1000);
+                });
+                
+            } catch (error) {
+                console.log('Premium widget recreation failed:', error);
+                showPremiumNavigationFallback();
+            }
+        }
+        
+        // Show fallback information for premium
+        function showPremiumNavigationFallback() {
+            const signalDate = new Date(tradeData.signal_unix * 1000);
+            document.getElementById('statusText').innerHTML = `
+                ⚠️ <strong>Premium Navigation Limited</strong><br>
+                📅 Signal: ${signalDate.toLocaleString()}<br>
+                💡 Use TradingView time controls to navigate to this time
+            `;
+            
+            // Still add trading levels for reference
+            setTimeout(() => {
+                addPremiumLevels();
+                addSignalMarkers();
+            }, 1000);
+        }
+        
+        // Add premium trading levels with enhanced visualization
+        function addPremiumLevels() {
+            if (!premiumWidget || !tradeData) return;
+            
+            try {
+                const chart = premiumWidget.chart();
+                
+                // Clear existing shapes
+                chart.removeAllShapes();
+                
+                // Add Entry Level (Blue solid line)
+                chart.createShape(
+                    { time: tradeData.signal_unix, price: tradeData.entry_price },
+                    {
+                        shape: 'horizontal_line',
+                        text: `ENTRY: $${tradeData.entry_price.toFixed(4)}`,
+                        overrides: {
+                            linecolor: '#2196F3',
+                            linewidth: 3,
+                            linestyle: 0, // solid
+                            showLabel: true,
+                            textcolor: '#FFFFFF',
+                            horzLabelsAlign: 'right'
+                        }
+                    }
+                );
+                
+                // Add Stop Loss Level (Red dashed line)
+                chart.createShape(
+                    { time: tradeData.signal_unix, price: tradeData.stop_loss_price },
+                    {
+                        shape: 'horizontal_line',
+                        text: `STOP LOSS: $${tradeData.stop_loss_price.toFixed(4)} (-${tradeData.stop_loss_pct}%)`,
+                        overrides: {
+                            linecolor: '#F44336',
+                            linewidth: 2,
+                            linestyle: 2, // dashed
+                            showLabel: true,
+                            textcolor: '#FFFFFF',
+                            horzLabelsAlign: 'right'
+                        }
+                    }
+                );
+                
+                // Add Take Profit Level (Green dashed line)
+                chart.createShape(
+                    { time: tradeData.signal_unix, price: tradeData.take_profit_price },
+                    {
+                        shape: 'horizontal_line',
+                        text: `TAKE PROFIT: $${tradeData.take_profit_price.toFixed(4)} (+${(tradeData.stop_loss_pct * tradeData.risk_reward_ratio).toFixed(1)}%)`,
+                        overrides: {
+                            linecolor: '#4CAF50',
+                            linewidth: 2,
+                            linestyle: 2, // dashed
+                            showLabel: true,
+                            textcolor: '#FFFFFF',
+                            horzLabelsAlign: 'right'
+                        }
+                    }
+                );
+                
+                document.getElementById('statusText').textContent = 'Premium levels added';
+                
+            } catch (error) {
+                console.error('Error adding premium levels:', error);
+                document.getElementById('statusText').textContent = 'Error adding levels';
+            }
+        }
+        
+        // Add premium signal markers
+        function addSignalMarkers() {
+            if (!premiumWidget || !tradeData) return;
+            
+            try {
+                const chart = premiumWidget.chart();
+                
+                // Add BUY signal marker
+                chart.createShape(
+                    { time: tradeData.signal_unix, price: tradeData.entry_price },
+                    {
+                        shape: 'arrow_up',
+                        text: `BUY SIGNAL\n${tradeData.signal_time}\nEntry: $${tradeData.entry_price.toFixed(4)}\nRisk:Reward 1:${tradeData.risk_reward_ratio}`,
+                        overrides: {
+                            color: '#4CAF50',
+                            textcolor: '#FFFFFF',
+                            fontsize: 14,
+                            transparency: 20
+                        }
+                    }
+                );
+                
+                // Add vertical line at signal time
+                chart.createShape(
+                    { time: tradeData.signal_unix, price: tradeData.entry_price },
+                    {
+                        shape: 'vertical_line',
+                        text: `Signal Time: ${tradeData.signal_time}`,
+                        overrides: {
+                            linecolor: '#FF9800',
+                            linewidth: 1,
+                            linestyle: 1, // dotted
+                            showLabel: true,
+                            textcolor: '#FF9800'
+                        }
+                    }
+                );
+                
+                document.getElementById('statusText').textContent = 'Signal markers added';
+                
+            } catch (error) {
+                console.error('Error adding signal markers:', error);
+                document.getElementById('statusText').textContent = 'Error adding markers';
+            }
+        }
+        
+        // Change timeframe with premium features
+        function changePremiumTimeframe(timeframe) {
+            currentTimeframe = timeframe;
+            
+            // Update timeframe display
+            const timeframeText = 
+                timeframe === '1' ? '1m' : 
+                timeframe === '5' ? '5m' : 
+                timeframe === '15' ? '15m' : 
+                timeframe === '60' ? '1h' : 
+                timeframe === '240' ? '4h' : '1D';
+            
+            document.getElementById('currentTimeframe').textContent = timeframeText;
+            
+            // Update active button
+            document.querySelectorAll('.btn-timeframe').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Recreate widget with new timeframe
+            initPremiumChart();
+        }
+        
+        // Update premium chart
+        function updatePremiumChart() {
+            updatePremiumLevels();
+            loadTradeDataAndSetup();
+        }
+        
+        // Update premium levels display
+        function updatePremiumLevels() {
+            const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+            const riskReward = parseFloat(document.getElementById('riskReward').value);
+            
+            const stopLossPrice = entryPrice * (1 - stopLoss / 100);
+            const takeProfitPrice = entryPrice * (1 + (stopLoss * riskReward) / 100);
+            const takeProfitPct = stopLoss * riskReward;
+            
+            // Update display
+            document.getElementById('stopLossPrice').textContent = stopLossPrice.toFixed(4);
+            document.getElementById('stopLossPct').textContent = stopLoss.toFixed(1);
+            document.getElementById('takeProfitPrice').textContent = takeProfitPrice.toFixed(4);
+            document.getElementById('takeProfitPct').textContent = takeProfitPct.toFixed(1);
+        }
+        
+        // Premium trade analysis
+        function analyzePremiumTrade() {
+            document.getElementById('tradeAnalysisResults').style.display = 'block';
+            document.getElementById('analysisContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>📊 Premium Analysis</h6>
+                        <p><strong>Symbol:</strong> ${currentSymbol}USDT</p>
+                        <p><strong>Entry Price:</strong> $${entryPrice.toFixed(4)}</p>
+                        <p><strong>Risk:Reward:</strong> 1:${document.getElementById('riskReward').value}</p>
+                        <p><strong>Stop Loss:</strong> ${document.getElementById('stopLoss').value}%</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>⏰ Timing Analysis</h6>
+                        <p><strong>Signal Time:</strong> ${tradeData.signal_time}</p>
+                        <p><strong>Timeframe:</strong> ${document.getElementById('currentTimeframe').textContent}</p>
+                        <p><strong>Analysis Period:</strong> ${document.getElementById('analysisDays').value} days</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>💰 Risk Management</h6>
+                        <p><strong>Max Loss:</strong> ${document.getElementById('stopLoss').value}% of capital</p>
+                        <p><strong>Target Profit:</strong> ${(parseFloat(document.getElementById('stopLoss').value) * parseFloat(document.getElementById('riskReward').value)).toFixed(1)}% of capital</p>
+                        <p><strong>Position Sizing:</strong> Based on risk amount</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePremiumLevels();
+            initPremiumChart();
+            
+            // Set initial active timeframe
+            document.querySelector('[onclick="changePremiumTimeframe(\'60\')"]').classList.add('active');
+        });
+    </script>
+</body>
+</html>

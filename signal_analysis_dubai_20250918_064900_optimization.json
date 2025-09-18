@@ -1,0 +1,82 @@
+{
+  "risk_analysis": {
+    "3-5%": {
+      "count": 6,
+      "avg_risk": 3.8044678194109705,
+      "avg_reward": 11.165035169350686,
+      "avg_rr_ratio": 3.023715691138797,
+      "success_potential": 100.0,
+      "strong_signals": 6,
+      "strong_signal_pct": 100.0,
+      "median_rr": 2.3164730693851596,
+      "rr_std": 1.5457657136490066
+    },
+    "5-7%": {
+      "count": 14,
+      "avg_risk": 6.267384386985228,
+      "avg_reward": 262.7181631257448,
+      "avg_rr_ratio": 44.94198359077782,
+      "success_potential": 100.0,
+      "strong_signals": 14,
+      "strong_signal_pct": 100.0,
+      "median_rr": 3.9157806165203084,
+      "rr_std": 153.5052850663365
+    },
+    "7-10%": {
+      "count": 9,
+      "avg_risk": 8.638080182058493,
+      "avg_reward": 52.737522699935056,
+      "avg_rr_ratio": 6.200995192803485,
+      "success_potential": 100.0,
+      "strong_signals": 9,
+      "strong_signal_pct": 100.0,
+      "median_rr": 4.2335269709543635,
+      "rr_std": 6.692035617617542
+    },
+    "10-15%": {
+      "count": 8,
+      "avg_risk": 11.815538837731918,
+      "avg_reward": 51.79753787749536,
+      "avg_rr_ratio": 4.330328437412556,
+      "success_potential": 75.0,
+      "strong_signals": 6,
+      "strong_signal_pct": 75.0,
+      "median_rr": 4.524563395921662,
+      "rr_std": 2.723211824667644
+    },
+    "15-20%": {
+      "count": 13,
+      "avg_risk": 18.384782196975223,
+      "avg_reward": 126.50186479489915,
+      "avg_rr_ratio": 6.863864970184636,
+      "success_potential": 84.61538461538461,
+      "strong_signals": 11,
+      "strong_signal_pct": 84.61538461538461,
+      "median_rr": 7.357142857142858,
+      "rr_std": 4.476078148626129
+    },
+    "20-30%": {
+      "count": 52,
+      "avg_risk": 25.590008057869873,
+      "avg_reward": 1687.5980148779845,
+      "avg_rr_ratio": 66.68549394724018,
+      "success_potential": 94.23076923076923,
+      "strong_signals": 49,
+      "strong_signal_pct": 94.23076923076923,
+      "median_rr": 5.671607111932113,
+      "rr_std": 279.5451599644346
+    },
+    "30-50%": {
+      "count": 86,
+      "avg_risk": 36.73080221851918,
+      "avg_reward": 458.3784396873177,
+      "avg_rr_ratio": 12.672380374622966,
+      "success_potential": 100.0,
+      "strong_signals": 86,
+      "strong_signal_pct": 100.0,
+      "median_rr": 6.661953974503186,
+      "rr_std": 14.769869604104759
+    }
+  },
+  "time_optimization": {
+    "hourly": {
